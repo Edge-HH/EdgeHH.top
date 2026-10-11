@@ -1,0 +1,9 @@
+{
+  "name": "edgehh-top",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "assets": {
+    "directory": "./dist",
+    "notFoundStrategy": "404Page"
+  }
+}
