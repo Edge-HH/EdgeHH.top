@@ -25,7 +25,7 @@ export const giscus = {
   repo: 'Edge-HH/EdgeHH.top',
   repoId: 'R_kgDOVEVvXw',
   category: 'Announcements',
-  categoryId: '',
+  categoryId: 'DIC_kwDOVEVvX84DItwZ',
   mapping: 'pathname',
   strict: '0',
   reactionsEnabled: '1',
