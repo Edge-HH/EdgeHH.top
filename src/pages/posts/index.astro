@@ -1,58 +1,45 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import PostRow from '../../components/PostRow.astro';
+import PostList from '../../components/PostList.astro';
 import { getPosts } from '../../lib/content';
 
 const posts = await getPosts();
 const tags = [...new Set(posts.flatMap((p) => p.data.tags))];
-
-const years = new Map<number, typeof posts>();
-for (const post of posts) {
-  const year = post.data.date.getUTCFullYear();
-  years.set(year, [...(years.get(year) ?? []), post]);
-}
 ---
 
-<BaseLayout title="文章" description="EdgeHH 的更新日志、开发笔记与想法。">
-  <section class="page-head container-narrow">
-    <p class="eyebrow" data-reveal>Articles</p>
-    <h1 data-reveal style="--d:80">文章</h1>
-    <p class="lead" data-reveal style="--d:160">更新日志、开发笔记，以及一些想法。</p>
-
-    {
-      tags.length > 1 && (
-        <div class="filters" role="group" aria-label="按标签筛选" data-reveal style="--d:240">
-          <button type="button" aria-pressed="true" data-tag="">
-            全部
-          </button>
-          {tags.map((tag) => (
-            <button type="button" aria-pressed="false" data-tag={tag}>
-              {tag}
-            </button>
-          ))}
-        </div>
-      )
-    }
-  </section>
-
-  <section class="list container-narrow">
-    {
-      posts.length === 0 ? (
-        <p class="empty">还没有文章。</p>
-      ) : (
-        [...years].map(([year, items]) => (
-          <div class="year-group" data-reveal>
-            <h2>{year}</h2>
-            <ul>
-              {items.map((post) => (
-                <PostRow post={post} />
+<BaseLayout title="文章" description="EdgeHH 的更新日志与开发笔记。">
+  <div class="page">
+    <section class="sheet head">
+      <p class="label"><b>文章</b>{posts.length} 篇</p>
+      <div>
+        <h1>更新日志与开发笔记</h1>
+        <p class="lede">
+          项目发布新版本时的说明，以及开发过程中的记录。也可以用 <a class="link" href="/rss.xml">RSS</a> 订阅。
+        </p>
+        {
+          tags.length > 1 && (
+            <div class="filters" role="group" aria-label="按标签筛选">
+              <button type="button" aria-pressed="true" data-tag="">
+                全部
+              </button>
+              {tags.map((tag) => (
+                <button type="button" aria-pressed="false" data-tag={tag}>
+                  {tag}
+                </button>
               ))}
-            </ul>
-          </div>
-        ))
-      )
-    }
-  </section>
+            </div>
+          )
+        }
+      </div>
+    </section>
+
+    <section class="sheet">
+      <span></span>
+      <div>
+        {posts.length === 0 ? <p class="muted">还没有文章。</p> : <PostList posts={posts} />}
+      </div>
+    </section>
+  </div>
 </BaseLayout>
 
 <script>
@@ -60,14 +47,8 @@ for (const post of posts) {
 
   const apply = (tag: string) => {
     buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tag === tag)));
-    document.querySelectorAll<HTMLElement>('.year-group').forEach((group) => {
-      let visible = 0;
-      group.querySelectorAll<HTMLElement>('[data-tags]').forEach((row) => {
-        const show = !tag || (row.dataset.tags ?? '').split('|').includes(tag);
-        row.hidden = !show;
-        if (show) visible++;
-      });
-      group.hidden = visible === 0;
+    document.querySelectorAll<HTMLElement>('[data-tags]').forEach((row) => {
+      row.hidden = Boolean(tag) && !(row.dataset.tags ?? '').split('|').includes(tag);
     });
     const url = new URL(location.href);
     if (tag) url.searchParams.set('tag', tag);
@@ -82,79 +63,43 @@ for (const post of posts) {
 </script>
 
 <style>
-  .page-head {
-    padding-top: clamp(64px, 10vw, 128px);
-    padding-bottom: 32px;
+  .head {
+    padding-block: 48px 32px;
   }
 
   h1 {
-    margin-top: 10px;
-    font-size: clamp(48px, 8vw, 88px);
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-size: clamp(26px, 3.4vw, 34px);
   }
 
-  .lead {
-    margin-top: 14px;
+  .lede {
+    margin-top: 12px;
+    color: var(--ink-2);
   }
 
   .filters {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 36px;
+    margin-top: 24px;
   }
 
   .filters button {
-    height: 34px;
-    padding: 0 16px;
-    border: 1px solid var(--line-2);
-    border-radius: 999px;
+    padding: 2px 10px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
     background: transparent;
-    font-size: 14px;
+    color: var(--ink-2);
+    font-size: 13.5px;
     cursor: pointer;
-    transition:
-      background-color 0.25s,
-      color 0.25s,
-      border-color 0.25s;
   }
 
   .filters button:hover {
-    background: var(--surface-2);
+    border-color: var(--ink-2);
   }
 
   .filters button[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
+    border-color: var(--ink);
+    background: var(--ink);
     color: var(--bg);
-  }
-
-  .list {
-    padding-bottom: clamp(96px, 12vw, 160px);
-  }
-
-  .year-group {
-    margin-top: 48px;
-  }
-
-  .year-group[hidden] {
-    display: none;
-  }
-
-  .year-group h2 {
-    margin-bottom: 8px;
-    color: var(--fg-3);
-    font-size: 15px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .year-group ul {
-    border-bottom: 1px solid var(--line);
-  }
-
-  .empty {
-    padding: 48px 0;
-    color: var(--fg-2);
   }
 </style>

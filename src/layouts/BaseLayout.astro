@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import Nav from '../components/Nav.astro';
+import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../site.config';
 
@@ -8,12 +8,10 @@ interface Props {
   title?: string;
   description?: string;
   type?: 'website' | 'article';
-  /** 项目页使用自己的吸顶副导航，主导航随页面滚走 */
-  stickyNav?: boolean;
 }
 
-const { title, description = site.description, type = 'website', stickyNav = true } = Astro.props;
-const fullTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.tagline}`;
+const { title, description = site.description, type = 'website' } = Astro.props;
+const fullTitle = title ? `${title} · ${site.name}` : site.name;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -21,14 +19,14 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="alternate" type="application/rss+xml" title={site.name} href="/rss.xml" />
-    <meta name="theme-color" content="#fbfbfd" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f7f6f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#161614" media="(prefers-color-scheme: dark)" />
     <meta property="og:type" content={type} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
@@ -37,27 +35,34 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:locale" content="zh_CN" />
     <meta name="generator" content={Astro.generator} />
     <script is:inline>
+      // 主题：用户选过就按选择，否则跟随系统；在首帧前写入，避免闪烁
       (() => {
         const root = document.documentElement;
-        root.classList.add('js');
+        const dark = window.matchMedia('(prefers-color-scheme: dark)');
+        let saved = null;
         try {
-          const theme = localStorage.getItem('theme');
-          if (theme === 'light' || theme === 'dark') root.dataset.theme = theme;
+          saved = localStorage.getItem('theme');
         } catch {}
+        const apply = () => {
+          root.dataset.theme = saved === 'light' || saved === 'dark' ? saved : dark.matches ? 'dark' : 'light';
+        };
+        apply();
+        dark.addEventListener('change', () => {
+          if (saved !== 'light' && saved !== 'dark') {
+            apply();
+            window.dispatchEvent(new Event('themechange'));
+          }
+        });
       })();
     </script>
     <slot name="head" />
   </head>
   <body>
     <a class="skip-link" href="#main">跳到正文</a>
-    <Nav sticky={stickyNav} />
-    <slot name="subnav" />
+    <Header />
     <main id="main">
       <slot />
     </main>
     <Footer />
-    <script>
-      import '../scripts/motion';
-    </script>
   </body>
 </html>

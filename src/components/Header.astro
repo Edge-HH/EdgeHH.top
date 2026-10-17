@@ -1,0 +1,154 @@
+---
+import BrandMark from './BrandMark.astro';
+import { getProjects } from '../lib/content';
+import { site } from '../site.config';
+
+const projects = await getProjects();
+const path = Astro.url.pathname;
+const links = [
+  ...projects.map((p) => ({ label: p.data.name, href: `/projects/${p.id}/` })),
+  { label: '文章', href: '/posts/' }
+];
+---
+
+<header class="site-header">
+  <div class="page bar">
+    <a class="brand" href="/" aria-label={`${site.name} 首页`}>
+      <BrandMark size={20} />
+      <span>{site.name}</span>
+    </a>
+    <nav aria-label="主导航">
+      <ul>
+        {
+          links.map((l) => (
+            <li>
+              <a href={l.href} aria-current={path.startsWith(l.href) ? 'page' : undefined}>
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+        <li class="ext">
+          <a href={site.github} target="_blank" rel="noopener">GitHub</a>
+        </li>
+        <li>
+          <button class="theme" type="button" data-theme-toggle aria-label="切换浅色或深色">
+            <span class="when-light">深色</span>
+            <span class="when-dark">浅色</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const root = document.documentElement;
+  document.querySelector('[data-theme-toggle]')?.addEventListener('click', () => {
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    try {
+      localStorage.setItem('theme', next);
+    } catch {}
+    window.dispatchEvent(new Event('themechange'));
+  });
+</script>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 24px;
+    min-height: 60px;
+    padding-block: 10px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 22px;
+    list-style: none;
+    font-size: 14px;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  nav a {
+    color: var(--ink-2);
+    transition: color 0.15s;
+  }
+
+  nav a:hover,
+  nav a[aria-current='page'] {
+    color: var(--ink);
+  }
+
+  nav a[aria-current='page'] {
+    text-decoration: underline;
+    text-decoration-color: var(--signal);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 8px;
+  }
+
+  .ext a::after {
+    content: '↗';
+    margin-left: 2px;
+    font-size: 12px;
+  }
+
+  .theme {
+    padding: 2px 8px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--ink-2);
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  @media (max-width: 560px) {
+    ul {
+      gap: 4px 14px;
+    }
+
+    .bar {
+      padding-block: 12px;
+    }
+  }
+
+  .theme:hover {
+    border-color: var(--ink-2);
+    color: var(--ink);
+  }
+
+  .when-dark {
+    display: none;
+  }
+
+  :global(:root[data-theme='dark']) .when-dark {
+    display: inline;
+  }
+
+  :global(:root[data-theme='dark']) .when-light {
+    display: none;
+  }
+</style>

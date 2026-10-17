@@ -1,683 +1,463 @@
 ---
-import { Image } from 'astro:assets';
 import { render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Icon from '../../components/Icon.astro';
 import ProjectIcon from '../../components/ProjectIcon.astro';
-import ProjectMockup from '../../components/ProjectMockup.astro';
-import PostRow from '../../components/PostRow.astro';
-import { getPosts, getProjects, projectStyle, type Project } from '../../lib/content';
+import Shot from '../../components/Shot.astro';
+import Lightbox from '../../components/Lightbox.astro';
+import PostList from '../../components/PostList.astro';
+import { getPosts, getProjects, isoDate, type Project } from '../../lib/content';
 import '../../styles/prose.css';
 
 export async function getStaticPaths() {
   const projects = await getProjects();
-  return projects.map((project, i) => ({
-    params: { slug: project.id },
-    props: { project, next: projects[(i + 1) % projects.length] }
-  }));
+  return projects.map((project) => ({ params: { slug: project.id }, props: { project } }));
 }
 
 interface Props {
   project: Project;
-  next: Project;
 }
 
-const { project, next } = Astro.props;
-const p = project.data;
-const { Content } = await render(project);
-const hasBody = Boolean(project.body?.trim());
+const { project } = Astro.props;
+const d = project.data;
+const { Content, headings } = await render(project);
 const posts = (await getPosts()).filter((post) => post.data.project?.id === project.id);
-const releases = `${p.repo}/releases`;
+const releasesUrl = `${d.repo}/releases`;
+
+const wide = d.screenshots.filter((s) => s.kind === 'wide');
+const small = d.screenshots.filter((s) => s.kind !== 'wide');
+const numbered = [...wide, ...small].map((s, i) => ({ ...s, number: i + 1 }));
+const [lead, ...restWide] = numbered.slice(0, wide.length);
+const smallShots = numbered.slice(wide.length);
+
+// 目录顺序与正文里 h2 的出现顺序一致，编号由 CSS 计数器生成
+const sections = [
+  ...(d.screenshots.length ? [{ id: 'screenshots', text: '截图' }] : []),
+  ...headings.filter((h) => h.depth === 2).map((h) => ({ id: h.slug, text: h.text })),
+  ...(d.releases.length ? [{ id: 'releases', text: '版本记录' }] : []),
+  ...(posts.length ? [{ id: 'posts', text: '相关文章' }] : [])
+];
+const two = (n: number) => String(n).padStart(2, '0');
 ---
 
-<BaseLayout title={p.name} description={`${p.name}：${p.summary}`} stickyNav={false}>
-  <div class="local-nav" slot="subnav" style={projectStyle(project)}>
-    <div class="container local-inner">
-      <a class="local-name" href="#top">{p.name}</a>
-      <nav class="local-links" aria-label={`${p.name} 页面导航`}>
-        <a href="#highlights">亮点</a>
-        <a href="#specs">规格</a>
-        <a href="#changelog">更新日志</a>
-        <a class="btn btn-accent local-cta" href={p.repo} target="_blank" rel="noopener">GitHub</a>
-      </nav>
-    </div>
-  </div>
-
-  <div class="project" style={projectStyle(project)}>
-    <!-- 首屏 -->
-    <section class="p-hero" id="top">
-      <div class="p-aura" aria-hidden="true"></div>
-      <div class="container p-hero-inner">
-        <div data-reveal><ProjectIcon project={project} size={88} /></div>
-        <h1 class="p-name accent-text" data-reveal style="--d:80">{p.name}</h1>
-        <p class="p-tagline" data-reveal style="--d:160">{p.tagline}</p>
-        <p class="p-summary" data-reveal style="--d:240">{p.summary}</p>
-        <div class="p-ctas" data-reveal style="--d:320">
-          <a class="btn btn-accent" href={p.repo} target="_blank" rel="noopener">
-            <Icon name="github" />
-            GitHub 仓库
-          </a>
-          {
-            p.links.map((link) => (
-              <a class="btn btn-ghost" href={link.href} target="_blank" rel="noopener">
-                {link.label}
-              </a>
-            ))
-          }
-        </div>
-        <p class="p-meta" data-reveal style="--d:400">
-          {p.version && <span>{p.version}</span>}
-          <span>{p.license}</span>
-          <span>{p.platforms.slice(0, 4).join(' / ')}</span>
-        </p>
+<BaseLayout title={d.name} description={`${d.name}：${d.summary}`}>
+  <div class="page">
+    <header class="top sheet">
+      <div class="label icon-col">
+        <ProjectIcon project={project} size={56} />
       </div>
-      <div class="container p-stage" data-scrub="enter">
-        <div class="p-device" data-reveal="scale" style="--d:300">
-          <ProjectMockup project={project} />
-        </div>
-      </div>
-    </section>
+      <div>
+        <h1>{d.name}</h1>
+        <p class="intro">{d.intro}</p>
 
-    <!-- 数字 -->
-    {
-      p.stats.length > 0 && (
-        <section class="p-stats container" aria-label="关键数字">
-          {p.stats.map((stat, i) => (
-            <div class="stat" data-reveal style={`--d:${i * 100}`}>
-              <b class="accent-text">
-                {stat.value}
-                {stat.unit && <small>{stat.unit}</small>}
-              </b>
-              <span>{stat.label}</span>
-            </div>
-          ))}
-        </section>
-      )
-    }
-
-    <!-- 亮点 -->
-    <section class="section" id="highlights">
-      <div class="container">
-        <div class="section-head" data-reveal>
-          <h2 class="section-title">亮点一览</h2>
-        </div>
-        <div class="bento">
-          {
-            p.highlights.map((h, i) => (
-              <article class:list={['bento-card', { wide: h.wide }]} data-reveal style={`--d:${(i % 3) * 80}`}>
-                <span class="bento-icon">
-                  <Icon name={h.icon} size={26} />
-                </span>
-                <h3>{h.title}</h3>
-                <p>{h.desc}</p>
-                {h.wide && <Icon name={h.icon} size={180} class="bento-mark" />}
-              </article>
-            ))
-          }
-        </div>
-      </div>
-    </section>
-
-    <!-- 截图 -->
-    {
-      p.gallery.length > 0 && (
-        <section class="section gallery">
-          <div class="container">
-            <div class="section-head" data-reveal>
-              <h2 class="section-title">界面一览</h2>
-            </div>
-            <div class:list={['shots', { single: p.gallery.length === 1 }]} data-lenis-prevent-horizontal>
-              {p.gallery.map((shot) => (
-                <figure data-reveal="scale">
-                  <Image
-                    src={shot.src}
-                    alt={shot.alt}
-                    widths={[720, 1280, 1920]}
-                    sizes="(min-width: 1120px) 1120px, 100vw"
-                    loading="lazy"
-                  />
-                  {shot.caption && <figcaption>{shot.caption}</figcaption>}
-                </figure>
-              ))}
-            </div>
-          </div>
-        </section>
-      )
-    }
-
-    <!-- 正文 -->
-    {
-      hasBody && (
-        <section class="section about">
-          <div class="container-narrow prose" data-reveal>
-            <Content />
-          </div>
-        </section>
-      )
-    }
-
-    <!-- 规格 -->
-    <section class="section specs-section" id="specs">
-      <div class="container">
-        <div class="section-head" data-reveal>
-          <h2 class="section-title">技术规格</h2>
-        </div>
-        <dl class="specs" data-reveal>
+        <dl class="meta">
           <div>
+            <dt>最新版本</dt>
+            <dd>
+              <a class="link mono" href={releasesUrl} target="_blank" rel="noopener">{d.version}</a>
+              {d.prerelease && <span class="tag warn">预发布</span>}
+            </dd>
+          </div>
+          <div>
+            <dt>发布日期</dt>
+            <dd class="mono">{isoDate(d.released)}</dd>
+          </div>
+          <div class="span">
             <dt>平台</dt>
-            <dd class="chips">{p.platforms.map((x) => <span class="chip">{x}</span>)}</dd>
+            <dd>{d.platforms.join('、')}</dd>
           </div>
-          <div>
-            <dt>技术栈</dt>
-            <dd class="chips">{p.stack.map((x) => <span class="chip">{x}</span>)}</dd>
+          <div class="span">
+            <dt>技术</dt>
+            <dd>{d.stack.join('、')}</dd>
           </div>
-          {
-            p.version && (
-              <div>
-                <dt>当前版本</dt>
-                <dd>
-                  <a class="link-arrow" href={releases} target="_blank" rel="noopener">
-                    {p.version}
-                    <Icon name="external" />
-                  </a>
-                </dd>
-              </div>
-            )
-          }
           <div>
             <dt>许可证</dt>
-            <dd>{p.license}</dd>
+            <dd>{d.license}</dd>
           </div>
-          <div>
+          <div class="span">
             <dt>源代码</dt>
             <dd>
-              <a class="link-arrow" href={p.repo} target="_blank" rel="noopener">
-                {p.repo.replace('https://', '')}
-                <Icon name="external" />
-              </a>
+              <a class="link" href={d.repo} target="_blank" rel="noopener">{d.repo.replace('https://', '')}</a>
             </dd>
           </div>
         </dl>
-      </div>
-    </section>
 
-    <!-- 更新日志 -->
-    <section class="section changelog" id="changelog">
-      <div class="container">
-        <div class="section-head" data-reveal>
-          <h2 class="section-title">更新日志</h2>
-          <a class="link-arrow" href={releases} target="_blank" rel="noopener">
-            GitHub Releases
-            <Icon name="external" />
+        <p class="actions">
+          <a class="button primary" href={d.download} target="_blank" rel="noopener">
+            下载 <small>{d.version}</small>
           </a>
-        </div>
+          {
+            d.docs && (
+              <a class="button" href={d.docs} target="_blank" rel="noopener">
+                使用文档
+              </a>
+            )
+          }
+          <a class="button" href={d.repo} target="_blank" rel="noopener">GitHub</a>
+        </p>
+
+        {d.notice && <p class="notice">{d.notice}</p>}
+      </div>
+    </header>
+
+    <div class="body sheet rule-top">
+      <nav class="toc" aria-label="本页目录">
+        <p class="label"><b>目录</b></p>
+        <ol>
+          {
+            sections.map((s, i) => (
+              <li>
+                <a href={`#${s.id}`}>
+                  <span class="mono">{two(i + 1)}</span>
+                  {s.text}
+                </a>
+              </li>
+            ))
+          }
+        </ol>
+      </nav>
+
+      <div class="content">
         {
-          posts.length > 0 ? (
-            <ul class="rows" data-reveal>
-              {posts.map((post) => (
-                <PostRow post={post} />
-              ))}
-            </ul>
-          ) : (
-            <p class="empty" data-reveal>
-              这里还没有 {p.name} 的文章，可以先到 GitHub Releases 查看各版本的更新说明。
-            </p>
+          lead && (
+            <section class="gallery" aria-labelledby="screenshots">
+              <h2 id="screenshots">截图</h2>
+              <p class="gallery-note">点击图片查看原尺寸。网站切到深色时，有深色版本的截图会一起切换。</p>
+              <Shot {...lead} sizes="(min-width: 1160px) 960px, 100vw" eager />
+              {restWide.length > 0 && (
+                <div class="grid-2">
+                  {restWide.map((s) => (
+                    <Shot {...s} sizes="(min-width: 1160px) 470px, (min-width: 700px) 48vw, 100vw" />
+                  ))}
+                </div>
+              )}
+              {smallShots.length > 0 && (
+                <div class="grid-4">
+                  {smallShots.map((s) => (
+                    <Shot {...s} sizes="(min-width: 1160px) 230px, (min-width: 700px) 24vw, 50vw" />
+                  ))}
+                </div>
+              )}
+            </section>
+          )
+        }
+
+        <div class="prose">
+          <Content />
+        </div>
+
+        {
+          d.releases.length > 0 && (
+            <section aria-labelledby="releases">
+              <h2 id="releases">版本记录</h2>
+              <ol class="releases">
+                {d.releases.map((r) => (
+                  <li>
+                    <p class="rel-head">
+                      <a class="link mono" href={`${d.repo}/releases/tag/${r.version}`} target="_blank" rel="noopener">
+                        {r.version}
+                      </a>
+                      <time class="mono" datetime={isoDate(r.date)}>
+                        {isoDate(r.date)}
+                      </time>
+                      {r.prerelease && <span class="tag">预发布</span>}
+                    </p>
+                    {r.notes.length > 0 && (
+                      <ul>
+                        {r.notes.map((n) => (
+                          <li>{n}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ol>
+              <p class="more">
+                <a class="link" href={releasesUrl} target="_blank" rel="noopener">
+                  GitHub Releases 上的全部版本
+                </a>
+              </p>
+            </section>
+          )
+        }
+
+        {
+          posts.length > 0 && (
+            <section aria-labelledby="posts">
+              <h2 id="posts">相关文章</h2>
+              <PostList posts={posts} showProject={false} />
+            </section>
           )
         }
       </div>
-    </section>
-
-    <!-- 下一个项目 -->
-    {
-      next.id !== project.id && (
-        <section class="section next-section">
-          <div class="container">
-            <a class="next-card" href={`/projects/${next.id}/`} style={projectStyle(next)} data-reveal="scale">
-              <span class="next-text">
-                <span class="eyebrow">下一个项目</span>
-                <span class="next-name">{next.data.name}</span>
-                <span class="next-tagline">{next.data.tagline}</span>
-              </span>
-              <ProjectIcon project={next} size={96} />
-              <Icon name="arrow" size={28} class="next-arrow" />
-            </a>
-          </div>
-        </section>
-      )
-    }
+    </div>
   </div>
+  <Lightbox />
 </BaseLayout>
 
 <style>
-  /* ---------- 吸顶副导航 ---------- */
-  .local-nav {
-    position: sticky;
-    top: 0;
-    z-index: 40;
-    height: var(--nav-h);
-    background: var(--nav);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 1px solid var(--line);
+  .top {
+    padding-block: 48px 40px;
   }
 
-  .local-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 100%;
+  .icon-col {
+    padding-top: 6px;
   }
 
-  .local-name {
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+  h1 {
+    font-size: clamp(32px, 4.4vw, 44px);
+    line-height: 1.15;
   }
 
-  .local-links {
-    display: flex;
-    align-items: center;
-    gap: clamp(12px, 2.4vw, 28px);
-    font-size: 13px;
-  }
-
-  .local-links a:not(.btn) {
-    color: var(--fg-2);
-    transition: color 0.2s;
-  }
-
-  .local-links a:not(.btn):hover {
-    color: var(--fg);
-  }
-
-  .local-cta {
-    min-height: 30px;
-    padding: 4px 14px;
-    font-size: 13px;
-  }
-
-  @media (max-width: 520px) {
-    .local-links a:not(.btn) {
-      display: none;
-    }
-  }
-
-  /* ---------- 首屏 ---------- */
-  .p-hero {
-    position: relative;
-    padding-top: clamp(56px, 9vw, 112px);
-    padding-bottom: 48px;
-    overflow: clip;
-  }
-
-  .p-aura {
-    position: absolute;
-    top: -20%;
-    left: 50%;
-    width: min(1400px, 160vw);
-    aspect-ratio: 2 / 1;
-    translate: -50% 0;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 22%, transparent), transparent);
-    pointer-events: none;
-  }
-
-  .p-hero-inner {
-    position: relative;
-    display: grid;
-    justify-items: center;
-    text-align: center;
-  }
-
-  .p-name {
-    margin-top: 24px;
-    padding-bottom: 0.06em;
-    font-size: clamp(56px, 11vw, 128px);
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -0.035em;
-  }
-
-  .p-tagline {
+  .intro {
+    max-width: 40em;
     margin-top: 14px;
-    font-size: clamp(24px, 3.4vw, 40px);
-    font-weight: 600;
-    line-height: 1.25;
+    color: var(--ink-2);
+    font-size: 17px;
   }
 
-  .p-summary {
-    max-width: 36em;
-    margin-top: 18px;
-    color: var(--fg-2);
-    font-size: clamp(17px, 1.6vw, 20px);
-  }
-
-  .p-ctas {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
-    margin-top: 32px;
-  }
-
-  .p-meta {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px 18px;
-    margin-top: 22px;
-    color: var(--fg-3);
-    font-size: 14px;
-  }
-
-  .p-stage {
-    position: relative;
-    margin-top: clamp(48px, 7vw, 88px);
-  }
-
-  .p-device {
-    max-width: 1000px;
-    margin-inline: auto;
-  }
-
-  .p-stage > .p-device.is-in {
-    scale: calc(0.9 + 0.1 * var(--p, 1));
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .p-stage > .p-device.is-in {
-      scale: 1;
-    }
-  }
-
-  /* ---------- 数字 ---------- */
-  .p-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-    gap: 32px;
-    padding-block: clamp(80px, 11vw, 140px) 0;
-  }
-
-  .stat {
-    display: grid;
-    gap: 8px;
-    padding-top: 22px;
-    border-top: 1px solid var(--line);
-  }
-
-  .stat b {
-    font-size: clamp(56px, 7vw, 88px);
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -0.03em;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .stat small {
-    margin-left: 4px;
-    font-size: 0.36em;
-    letter-spacing: 0;
-  }
-
-  .stat span {
-    color: var(--fg-2);
-    font-size: 16px;
-  }
-
-  /* ---------- 亮点 ---------- */
-  .bento {
+  .meta {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-auto-flow: dense;
-    gap: 20px;
+    gap: 14px 32px;
+    max-width: 760px;
+    margin: 28px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule-soft);
+    font-size: 14px;
+    line-height: 1.6;
   }
 
-  .bento-card {
-    position: relative;
+  .meta dt {
+    color: var(--ink-3);
+    font-size: 12.5px;
+  }
+
+  .meta dd {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 2px 0 0;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
-    min-height: 260px;
-    padding: clamp(26px, 3vw, 36px);
-    border-radius: var(--r-xl);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    overflow: hidden;
-  }
-
-  .bento-card.wide {
-    grid-column: span 2;
-    background:
-      radial-gradient(70% 90% at 100% 100%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
-      var(--surface);
-  }
-
-  .bento-icon {
-    display: grid;
-    place-items: center;
-    width: 52px;
-    height: 52px;
-    margin-bottom: auto;
-    border-radius: 16px;
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
-    color: var(--accent);
-  }
-
-  .bento-card h3 {
     margin-top: 28px;
-    font-size: clamp(21px, 2vw, 26px);
-    font-weight: 700;
   }
 
-  .bento-card.wide h3 {
-    font-size: clamp(24px, 2.6vw, 32px);
+  .notice {
+    max-width: 44em;
+    margin-top: 24px;
+    padding: 12px 14px;
+    border-left: 2px solid var(--signal);
+    background: var(--bg-sunk);
+    color: var(--ink-2);
+    font-size: 14.5px;
   }
 
-  .bento-card p {
-    position: relative;
-    max-width: 34em;
-    color: var(--fg-2);
-    font-size: 16px;
+  /* ---------- 目录 ---------- */
+  .body {
+    padding-top: 40px;
   }
 
-  .bento-card :global(.bento-mark) {
-    position: absolute;
-    top: -24px;
-    right: -24px;
-    color: var(--accent);
-    opacity: 0.12;
-    stroke-width: 1;
+  .toc {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  .toc ol {
+    margin-top: 10px;
+    list-style: none;
+  }
+
+  .toc li + li {
+    margin-top: 6px;
+  }
+
+  .toc a {
+    display: grid;
+    grid-template-columns: 2.2em 1fr;
+    color: var(--ink-2);
+    text-decoration: none;
+  }
+
+  .toc a:hover,
+  .toc a[aria-current='true'] {
+    color: var(--signal);
+  }
+
+  .toc .mono {
+    color: var(--ink-3);
   }
 
   @media (max-width: 900px) {
-    .bento {
+    .toc {
+      display: none;
+    }
+
+    .meta {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  @media (max-width: 600px) {
-    .bento {
-      grid-template-columns: 1fr;
-    }
-
-    .bento-card.wide {
-      grid-column: auto;
-    }
-
-    .bento-card {
-      min-height: 0;
-    }
+  /* ---------- 正文与章节编号 ---------- */
+  .content {
+    counter-reset: sec;
+    min-width: 0;
   }
 
-  /* ---------- 截图 ---------- */
-  .gallery {
+  .content :global(h2) {
+    counter-increment: sec;
+    margin-top: 72px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-size: 22px;
+    line-height: 1.4;
+    scroll-margin-top: 16px;
+  }
+
+  .content :global(h2::before) {
+    content: counter(sec, decimal-leading-zero);
+    display: block;
+    margin-bottom: 4px;
+    color: var(--signal);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 400;
+  }
+
+  /* 第一个章节紧接着上方的分隔线，不再重复画线 */
+  .content > :first-child > :global(h2:first-child) {
+    margin-top: 0;
     padding-top: 0;
+    border-top: 0;
   }
 
-  .shots {
+  /* 分隔线贯穿整栏，正文段落保持易读宽度 */
+  .content .prose {
+    max-width: none;
+  }
+
+  .content .prose > :global(:not(h2)) {
+    max-width: 44em;
+  }
+
+  .gallery-note {
+    margin: 6px 0 20px;
+    color: var(--ink-3);
+    font-size: 13.5px;
+  }
+
+  .grid-2,
+  .grid-4 {
     display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: min(86%, 960px);
-    gap: 20px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
+    gap: 28px 24px;
+    margin-top: 32px;
   }
 
-  .shots::-webkit-scrollbar {
-    display: none;
+  .grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .shots.single {
-    grid-auto-columns: 100%;
+  .grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: start;
   }
 
-  figure {
-    margin: 0;
-    scroll-snap-align: start;
+  @media (max-width: 700px) {
+    .grid-2 {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .meta {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .meta .span {
+      grid-column: 1 / -1;
+    }
   }
 
-  figure img {
-    width: 100%;
-    border-radius: var(--r-lg);
-    border: 1px solid var(--line);
-    box-shadow: var(--shadow-1);
+  /* ---------- 版本记录 ---------- */
+  .releases {
+    max-width: 44em;
+    margin-top: 16px;
+    list-style: none;
   }
 
-  figcaption {
-    margin-top: 14px;
-    color: var(--fg-2);
-    font-size: 15px;
-    text-align: center;
+  .releases > li {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule-soft);
   }
 
-  /* ---------- 正文 ---------- */
-  .about {
-    padding-top: 0;
+  .rel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
   }
 
-  /* ---------- 规格 ---------- */
-  .specs-section {
-    padding-top: 0;
-  }
-
-  .specs {
-    margin: 0;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .specs > div {
-    display: grid;
-    grid-template-columns: minmax(120px, 1fr) 3fr;
-    gap: 12px 32px;
-    padding: 24px 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .specs dt {
-    color: var(--fg-2);
+  .rel-head .link {
     font-weight: 600;
   }
 
-  .specs dd {
-    margin: 0;
+  .rel-head time {
+    color: var(--ink-3);
   }
 
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+  .releases ul {
+    margin-top: 6px;
+    list-style: none;
+    color: var(--ink-2);
+    font-size: 14.5px;
   }
 
-  @media (max-width: 600px) {
-    .specs > div {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  /* ---------- 更新日志 ---------- */
-  .changelog {
-    padding-top: 0;
-  }
-
-  .changelog .section-head {
-    flex-wrap: wrap;
-  }
-
-  .rows {
-    border-bottom: 1px solid var(--line);
-  }
-
-  .empty {
-    padding: 28px;
-    border-radius: var(--r-md);
-    background: var(--surface-2);
-    color: var(--fg-2);
-  }
-
-  /* ---------- 下一个项目 ---------- */
-  .next-section {
-    padding-top: 0;
-  }
-
-  .next-card {
+  .releases ul li {
     position: relative;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    gap: 24px;
-    padding: clamp(32px, 5vw, 64px);
-    border-radius: var(--r-xl);
-    border: 1px solid var(--line);
-    background:
-      radial-gradient(60% 120% at 100% 50%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%),
-      var(--surface);
-    overflow: hidden;
-    transition:
-      border-color 0.3s,
-      box-shadow 0.5s var(--ease);
+    padding-left: 1.2em;
   }
 
-  .next-card:hover {
-    border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
-    box-shadow: var(--shadow-2);
-  }
-
-  .next-text {
-    display: grid;
-    gap: 6px;
-  }
-
-  .next-name {
-    font-size: clamp(40px, 6vw, 72px);
-    font-weight: 700;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-  }
-
-  .next-tagline {
-    color: var(--fg-2);
-    font-size: clamp(17px, 1.8vw, 21px);
-  }
-
-  .next-card :global(.next-arrow) {
+  .releases ul li::before {
+    content: '';
     position: absolute;
-    right: clamp(24px, 4vw, 48px);
-    bottom: clamp(20px, 3vw, 36px);
-    color: var(--accent);
-    transition: translate 0.4s var(--ease);
+    top: 0.9em;
+    left: 0.1em;
+    width: 0.55em;
+    height: 1px;
+    background: var(--ink-3);
   }
 
-  .next-card:hover :global(.next-arrow) {
-    translate: 6px 0;
-  }
-
-  @media (max-width: 600px) {
-    .next-card {
-      grid-template-columns: 1fr;
-    }
-
-    .next-card :global(.project-icon) {
-      display: none;
-    }
+  .more {
+    margin-top: 14px;
+    font-size: 14.5px;
   }
 </style>
+
+<script>
+  // 目录高亮当前阅读的章节
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc a')];
+  const targets = links
+    .map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1))))
+    .filter((el): el is HTMLElement => el !== null);
+  if (targets.length) {
+    const update = () => {
+      const line = window.innerHeight * 0.25;
+      let current = 0;
+      targets.forEach((el, i) => {
+        if (el.getBoundingClientRect().top < line) current = i;
+      });
+      links.forEach((a, i) => a.setAttribute('aria-current', String(i === current)));
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+  }
+</script>

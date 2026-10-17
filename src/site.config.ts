@@ -1,16 +1,10 @@
 export const site = {
   name: 'EdgeHH',
-  tagline: '把想法，做成趁手的工具',
-  description: 'EdgeHH 的项目与文章：RemoteCI、Pancake、ClipPort，以及更新日志和开发笔记。',
+  description: 'EdgeHH 的开源项目：RemoteCI、Pancake 与 ClipPort 的功能说明、截图、下载和更新日志。',
   github: 'https://github.com/Edge-HH',
   /** ICP 备案号，留空则页脚不显示 */
   icp: ''
 };
-
-export const nav = [
-  { label: '项目', href: '/#projects' },
-  { label: '文章', href: '/posts/' }
-];
 
 /**
  * giscus 评论（基于 GitHub Discussions）

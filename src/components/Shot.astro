@@ -1,0 +1,103 @@
+---
+/**
+ * 一张截图：有深色版本时随网站主题切换；点击打开原尺寸大图（见 Lightbox.astro）。
+ */
+import { Image, getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  src: ImageMetadata;
+  dark?: ImageMetadata;
+  alt: string;
+  caption?: string;
+  build?: string;
+  number?: number;
+  kind?: 'wide' | 'phone' | 'watch';
+  sizes: string;
+  eager?: boolean;
+}
+
+const { src, dark, alt, caption, build, number, kind = 'wide', sizes, eager = false } = Astro.props;
+
+const widths = (img: ImageMetadata) => [480, 800, 1200, 1600, 2000].filter((w) => w < img.width).concat(img.width);
+const large = (img: ImageMetadata) => getImage({ src: img, width: Math.min(img.width, 2400), format: 'webp' });
+const full = await large(src);
+const fullDark = dark ? await large(dark) : undefined;
+const loading = eager ? 'eager' : 'lazy';
+---
+
+<figure class:list={['shot', kind]}>
+  <a class="zoom" href={full.src} data-full={full.src} data-full-dark={fullDark?.src} aria-label={`查看大图：${alt}`}>
+    <Image
+      class={dark ? 'only-light' : undefined}
+      src={src}
+      alt={alt}
+      widths={widths(src)}
+      sizes={sizes}
+      loading={loading}
+      decoding="async"
+    />
+    {
+      dark && (
+        <Image class="only-dark" src={dark} alt={alt} widths={widths(dark)} sizes={sizes} loading="lazy" decoding="async" />
+      )
+    }
+  </a>
+  {
+    (caption || number) && (
+      <figcaption>
+        {number && <span class="no mono">图 {number}</span>}
+        <span>{caption}</span>
+        {build && <span class="build mono">{build}</span>}
+      </figcaption>
+    )
+  }
+</figure>
+
+<style>
+  .shot {
+    margin: 0;
+  }
+
+  .zoom {
+    display: block;
+    border: 1px solid var(--frame);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--bg-sunk);
+    cursor: zoom-in;
+  }
+
+  .zoom :global(img) {
+    width: 100%;
+  }
+
+  .phone .zoom {
+    border-radius: 10px;
+  }
+
+  .watch .zoom {
+    border: 0;
+    border-radius: 50%;
+    background: #000;
+  }
+
+  figcaption {
+    margin-top: 10px;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+
+  .no {
+    margin-right: 8px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .build {
+    margin-left: 8px;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+</style>

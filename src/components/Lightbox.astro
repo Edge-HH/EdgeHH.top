@@ -1,0 +1,63 @@
+<dialog class="lightbox" data-lightbox aria-label="截图大图">
+  <img alt="" />
+  <p><span data-caption></span>　点击任意处或按 Esc 关闭</p>
+</dialog>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('[data-lightbox]');
+  const img = dialog?.querySelector('img');
+  const caption = dialog?.querySelector('[data-caption]');
+
+  if (dialog && img && caption) {
+    document.querySelectorAll<HTMLAnchorElement>('a.zoom').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+        event.preventDefault();
+        const dark = document.documentElement.dataset.theme === 'dark' && link.dataset.fullDark;
+        img.src = (dark || link.dataset.full) ?? link.href;
+        img.alt = link.querySelector('img')?.alt ?? '';
+        caption.textContent = link.closest('figure')?.querySelector('figcaption')?.textContent?.trim() ?? '';
+        dialog.showModal();
+      });
+    });
+    dialog.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('close', () => img.removeAttribute('src'));
+  }
+</script>
+
+<style>
+  .lightbox {
+    width: 100vw;
+    max-width: none;
+    height: 100vh;
+    max-height: none;
+    margin: 0;
+    padding: 24px;
+    border: 0;
+    background: rgb(12 12 11 / 0.94);
+    color: #d9d6cf;
+    cursor: zoom-out;
+  }
+
+  .lightbox[open] {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    place-items: center;
+    gap: 12px;
+  }
+
+  .lightbox::backdrop {
+    background: transparent;
+  }
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  p {
+    font-size: 13px;
+    text-align: center;
+  }
+</style>

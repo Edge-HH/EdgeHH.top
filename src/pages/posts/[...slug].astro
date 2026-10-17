@@ -2,9 +2,8 @@
 import { getEntry, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Comments from '../../components/Comments.astro';
-import Icon from '../../components/Icon.astro';
 import ProjectIcon from '../../components/ProjectIcon.astro';
-import { formatDate, getPosts, isoDate, projectStyle, readingMinutes, type Post } from '../../lib/content';
+import { formatDate, getPosts, isoDate, readingMinutes, type Post } from '../../lib/content';
 import '../../styles/prose.css';
 
 export async function getStaticPaths() {
@@ -25,257 +24,178 @@ const { post, newer, older } = Astro.props;
 const { title, description, date, updated, tags, comments } = post.data;
 const { Content, headings } = await render(post);
 const project = post.data.project ? await getEntry(post.data.project) : undefined;
-const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const toc = headings.filter((h) => h.depth === 2);
 ---
 
 <BaseLayout title={title} description={description} type="article">
-  <article class="post" style={project ? projectStyle(project) : undefined}>
-    <header class="post-head container-narrow">
-      <a class="back link-arrow" href="/posts/" data-reveal>
-        <Icon name="chevron-left" />
-        全部文章
-      </a>
-      <p class="meta" data-reveal style="--d:60">
-        <time datetime={isoDate(date)}>{formatDate(date)}</time>
-        <span>约 {readingMinutes(post.body)} 分钟读完</span>
-        {tags.map((tag) => <a class="chip" href={`/posts/?tag=${encodeURIComponent(tag)}`}>{tag}</a>)}
+  <article class="page">
+    <header class="sheet head">
+      <p class="label">
+        <a class="link" href="/posts/">全部文章</a>
       </p>
-      <h1 data-reveal style="--d:120">{title}</h1>
-      {
-        description && (
-          <p class="lead" data-reveal style="--d:180">
-            {description}
-          </p>
-        )
-      }
-      {
-        project && (
-          <a class="project-link" href={`/projects/${project.id}/`} data-reveal style="--d:240">
-            <ProjectIcon project={project} size={28} />
-            <span>
-              <small>相关项目</small>
-              {project.data.name}
-            </span>
-            <Icon name="chevron" size={18} />
-          </a>
-        )
-      }
+      <div>
+        <p class="meta">
+          <time datetime={isoDate(date)}>{formatDate(date)}</time>
+          <span>约 {readingMinutes(post.body)} 分钟</span>
+          {tags.map((tag) => <a class="tag" href={`/posts/?tag=${encodeURIComponent(tag)}`}>{tag}</a>)}
+        </p>
+        <h1>{title}</h1>
+        {description && <p class="lede">{description}</p>}
+        {
+          project && (
+            <a class="project" href={`/projects/${project.id}/`}>
+              <ProjectIcon project={project} size={24} />
+              <span>
+                相关项目：<b>{project.data.name}</b>
+              </span>
+            </a>
+          )
+        }
+      </div>
     </header>
 
-    <div class:list={['post-body', { 'has-toc': toc.length >= 3 }]}>
-      <div class="prose" data-reveal style="--d:200">
-        <Content />
-      </div>
-      {
-        toc.length >= 3 && (
-          <aside class="toc" aria-label="目录">
-            <p>目录</p>
-            <ol>
-              {toc.map((h) => (
-                <li class={`d${h.depth}`}>
-                  <a href={`#${h.slug}`}>{h.text}</a>
-                </li>
-              ))}
-            </ol>
-          </aside>
-        )
-      }
-    </div>
+    <div class="sheet body rule-top">
+      <nav class="toc label" aria-label="本文目录">
+        {
+          toc.length >= 3 && (
+            <>
+              <b>目录</b>
+              <ol>
+                {toc.map((h) => (
+                  <li>
+                    <a href={`#${h.slug}`}>{h.text}</a>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )
+        }
+      </nav>
+      <div>
+        <div class="prose">
+          <Content />
+        </div>
 
-    <footer class="post-foot container-narrow">
-      {updated && <p class="updated">最后更新于 {formatDate(updated)}</p>}
-      {
-        (newer || older) && (
-          <nav class="pager" aria-label="相邻文章">
-            {older ? (
-              <a href={`/posts/${older.id}/`}>
-                <small>上一篇</small>
-                {older.data.title}
-              </a>
-            ) : (
-              <span />
-            )}
-            {newer && (
-              <a class="next" href={`/posts/${newer.id}/`}>
-                <small>下一篇</small>
-                {newer.data.title}
-              </a>
-            )}
-          </nav>
-        )
-      }
-      {comments && <Comments />}
-    </footer>
+        <footer class="foot">
+          {updated && <p class="updated">最后更新于 {formatDate(updated)}</p>}
+          {
+            (newer || older) && (
+              <nav class="pager" aria-label="相邻文章">
+                {older ? (
+                  <a href={`/posts/${older.id}/`}>
+                    <small>上一篇</small>
+                    {older.data.title}
+                  </a>
+                ) : (
+                  <span />
+                )}
+                {newer && (
+                  <a class="next" href={`/posts/${newer.id}/`}>
+                    <small>下一篇</small>
+                    {newer.data.title}
+                  </a>
+                )}
+              </nav>
+            )
+          }
+          {comments && <Comments />}
+        </footer>
+      </div>
+    </div>
   </article>
 </BaseLayout>
 
-<script>
-  // 目录高亮当前阅读的章节
-  const links = new Map<string, HTMLAnchorElement>();
-  document.querySelectorAll<HTMLAnchorElement>('.toc a').forEach((a) => {
-    links.set(decodeURIComponent(a.hash.slice(1)), a);
-  });
-
-  if (links.size) {
-    const headings = [...links.keys()]
-      .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => el !== null);
-    const update = () => {
-      const line = window.innerHeight * 0.3;
-      let current = headings[0];
-      for (const h of headings) if (h.getBoundingClientRect().top < line) current = h;
-      links.forEach((a, id) => a.classList.toggle('active', id === current?.id));
-    };
-    window.addEventListener('scroll', update, { passive: true });
-    update();
-  }
-</script>
-
 <style>
-  .post {
-    padding-bottom: clamp(96px, 12vw, 160px);
-  }
-
-  .post-head {
-    padding-top: clamp(48px, 8vw, 104px);
-    padding-bottom: 40px;
-  }
-
-  .back {
-    margin-bottom: 28px;
-    font-size: 15px;
+  .head {
+    padding-block: 48px 32px;
   }
 
   .meta {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px 16px;
-    color: var(--fg-2);
+    gap: 6px 14px;
+    color: var(--ink-3);
     font-size: 14px;
   }
 
-  .meta .chip:hover {
-    color: var(--fg);
+  .meta .tag {
+    text-decoration: none;
   }
 
   h1 {
-    margin-top: 16px;
-    font-size: clamp(34px, 5.4vw, 56px);
-    font-weight: 700;
-    line-height: 1.15;
-    letter-spacing: -0.015em;
+    max-width: 22em;
+    margin-top: 12px;
+    font-size: clamp(26px, 3.6vw, 36px);
+    line-height: 1.35;
   }
 
-  .lead {
-    margin-top: 16px;
+  .lede {
+    max-width: 40em;
+    margin-top: 12px;
+    color: var(--ink-2);
+    font-size: 17px;
   }
 
-  .project-link {
+  .project {
     display: inline-flex;
     align-items: center;
-    gap: 12px;
-    margin-top: 28px;
-    padding: 8px 14px 8px 8px;
-    border-radius: 14px;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    font-weight: 600;
-    transition: border-color 0.3s;
+    gap: 10px;
+    margin-top: 20px;
+    color: var(--ink-2);
+    font-size: 14px;
+    text-decoration: none;
   }
 
-  .project-link:hover {
-    border-color: var(--accent);
+  .project:hover b {
+    color: var(--signal);
   }
 
-  .project-link span {
-    display: grid;
-    line-height: 1.25;
+  .project b {
+    color: var(--ink);
   }
 
-  .project-link small {
-    color: var(--fg-3);
-    font-size: 12px;
-    font-weight: 500;
-  }
-
-  .post-body {
-    width: min(100% - 2 * var(--gutter), var(--maxw-narrow));
-    margin-inline: auto;
-    padding-top: 8px;
+  .body {
+    padding-top: 32px;
   }
 
   .toc {
-    display: none;
-  }
-
-  /* 宽屏时目录放在正文右侧，左侧留出同宽空白让正文保持居中 */
-  @media (min-width: 1400px) {
-    .post-body.has-toc {
-      display: grid;
-      grid-template-columns: var(--maxw-narrow) 220px;
-      gap: 64px;
-      width: calc(var(--maxw-narrow) + 284px);
-      padding-left: 284px;
-      box-sizing: content-box;
-    }
-
-    .has-toc .toc {
-      display: block;
-      position: sticky;
-      top: calc(var(--nav-h) + 32px);
-      align-self: start;
-      font-size: 14px;
-    }
-  }
-
-  .toc p {
-    margin-bottom: 12px;
-    color: var(--fg-3);
-    font-size: 13px;
-    font-weight: 600;
+    position: sticky;
+    top: 24px;
+    align-self: start;
   }
 
   .toc ol {
-    display: grid;
-    gap: 2px;
-    border-left: 1px solid var(--line);
-    list-style: none;
+    margin-top: 8px;
+    padding-left: 1.2em;
+  }
+
+  .toc li + li {
+    margin-top: 4px;
   }
 
   .toc a {
-    display: block;
-    margin-left: -1px;
-    padding: 5px 0 5px 14px;
-    border-left: 1px solid transparent;
-    color: var(--fg-2);
-    line-height: 1.45;
-    transition:
-      color 0.2s,
-      border-color 0.2s;
-  }
-
-  .toc .d3 a {
-    padding-left: 26px;
-    font-size: 13px;
+    color: var(--ink-2);
+    text-decoration: none;
   }
 
   .toc a:hover {
-    color: var(--fg);
+    color: var(--signal);
   }
 
-  .toc a.active {
-    border-left-color: var(--accent, var(--fg));
-    color: var(--fg);
-    font-weight: 500;
+  @media (max-width: 900px) {
+    .toc {
+      display: none;
+    }
   }
 
-  .post-foot {
+  .foot {
+    max-width: 44em;
     margin-top: 56px;
   }
 
   .updated {
-    color: var(--fg-3);
+    color: var(--ink-3);
     font-size: 14px;
   }
 
@@ -283,29 +203,28 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-    margin-top: 32px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
   }
 
   .pager a {
     display: grid;
-    gap: 4px;
-    padding: 18px 20px;
-    border-radius: var(--r-md);
-    border: 1px solid var(--line);
-    background: var(--surface);
+    gap: 2px;
+    color: var(--ink);
     font-weight: 600;
-    line-height: 1.4;
-    transition: border-color 0.3s;
+    line-height: 1.5;
+    text-decoration: none;
   }
 
   .pager a:hover {
-    border-color: var(--line-2);
+    color: var(--signal);
   }
 
   .pager small {
-    color: var(--fg-3);
+    color: var(--ink-3);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 400;
   }
 
   .pager .next {
@@ -320,6 +239,7 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
 
     .pager .next {
       grid-column: 1;
+      text-align: left;
     }
   }
 </style>

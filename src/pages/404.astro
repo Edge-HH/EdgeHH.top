@@ -3,43 +3,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="页面不存在">
-  <section class="nf container">
-    <p class="code brand-gradient-text" data-reveal="blur">404</p>
-    <h1 data-reveal style="--d:100">这个页面不存在。</h1>
-    <p class="lead" data-reveal style="--d:180">链接可能已经失效，或者地址输入有误。</p>
-    <div class="ctas" data-reveal style="--d:260">
-      <a class="btn btn-primary" href="/">回到首页</a>
-      <a class="btn btn-ghost" href="/posts/">看看文章</a>
+  <section class="page sheet nf">
+    <p class="label mono">404</p>
+    <div>
+      <h1>这个页面不存在。</h1>
+      <p class="muted">链接可能已经失效，或者地址输入有误。</p>
+      <p class="links">
+        <a class="link" href="/">回到首页</a>
+        <a class="link" href="/posts/">看看文章</a>
+      </p>
     </div>
   </section>
 </BaseLayout>
 
 <style>
   .nf {
-    display: grid;
-    justify-items: center;
-    gap: 16px;
-    padding-block: clamp(96px, 16vw, 200px);
-    text-align: center;
-  }
-
-  .code {
-    font-size: clamp(96px, 18vw, 200px);
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -0.04em;
+    padding-block: 72px;
   }
 
   h1 {
-    font-size: clamp(28px, 4vw, 44px);
-    font-weight: 700;
+    font-size: 28px;
   }
 
-  .ctas {
+  .muted {
+    margin-top: 8px;
+  }
+
+  .links {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
-    margin-top: 16px;
+    gap: 20px;
+    margin-top: 20px;
   }
 </style>

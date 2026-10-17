@@ -1,0 +1,97 @@
+---
+import { getEntry } from 'astro:content';
+import { isoDate, type Post } from '../lib/content';
+
+interface Props {
+  posts: Post[];
+  /** 显示关联项目名 */
+  showProject?: boolean;
+}
+
+const { posts, showProject = true } = Astro.props;
+const rows = await Promise.all(
+  posts.map(async (post) => ({
+    post,
+    project: showProject && post.data.project ? await getEntry(post.data.project) : undefined
+  }))
+);
+---
+
+<ul class="post-list">
+  {
+    rows.map(({ post, project }) => (
+      <li data-tags={post.data.tags.join('|')}>
+        <time class="mono" datetime={isoDate(post.data.date)}>
+          {isoDate(post.data.date)}
+        </time>
+        <span class="main">
+          <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+          {post.data.draft && <span class="tag">草稿</span>}
+          {post.data.description && <span class="desc">{post.data.description}</span>}
+        </span>
+        <span class="meta">{project ? project.data.name : post.data.tags.join(' / ')}</span>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .post-list {
+    list-style: none;
+    border-top: 1px solid var(--rule);
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: 7.5em minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 4px 20px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  li[hidden] {
+    display: none;
+  }
+
+  time {
+    color: var(--ink-3);
+  }
+
+  .main {
+    display: grid;
+    gap: 2px;
+  }
+
+  a {
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--signal);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .desc {
+    color: var(--ink-2);
+    font-size: 14px;
+  }
+
+  .meta {
+    color: var(--ink-3);
+    font-size: 13px;
+  }
+
+  @media (max-width: 640px) {
+    li {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .meta {
+      display: none;
+    }
+  }
+</style>
