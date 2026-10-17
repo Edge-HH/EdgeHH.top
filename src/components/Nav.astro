@@ -1,0 +1,175 @@
+---
+import Icon from './Icon.astro';
+import BrandMark from './BrandMark.astro';
+import { nav, site } from '../site.config';
+
+interface Props {
+  sticky?: boolean;
+}
+
+const { sticky = true } = Astro.props;
+const path = Astro.url.pathname;
+const isCurrent = (href: string) => href !== '/#projects' && path.startsWith(href);
+---
+
+<header class:list={['site-nav', { sticky }]} data-nav>
+  <nav class="nav-inner container" aria-label="主导航">
+    <a class="brand" href="/" aria-label={`${site.name} 首页`}>
+      <BrandMark size={22} />
+      <span>{site.name}</span>
+    </a>
+    <ul class="links">
+      {
+        nav.map((item) => (
+          <li>
+            <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+      <li>
+        <a href={site.github} target="_blank" rel="noopener" aria-label="GitHub">
+          <Icon name="github" size={18} />
+        </a>
+      </li>
+      <li>
+        <button class="theme-toggle" type="button" aria-label="切换深浅色" data-theme-toggle>
+          <Icon name="moon" size={18} class="i-moon" />
+          <Icon name="sun" size={18} class="i-sun" />
+        </button>
+      </li>
+    </ul>
+  </nav>
+</header>
+
+<script>
+  const root = document.documentElement;
+  const dark = window.matchMedia('(prefers-color-scheme: dark)');
+  const resolved = () => root.dataset.theme ?? (dark.matches ? 'dark' : 'light');
+  const announce = () => window.dispatchEvent(new CustomEvent('themechange', { detail: resolved() }));
+
+  document.querySelector('[data-theme-toggle]')?.addEventListener('click', () => {
+    const next = resolved() === 'dark' ? 'light' : 'dark';
+    const apply = () => {
+      root.dataset.theme = next;
+      try {
+        localStorage.setItem('theme', next);
+      } catch {}
+      announce();
+    };
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (document.startViewTransition && !calm) document.startViewTransition(apply);
+    else apply();
+  });
+
+  dark.addEventListener('change', () => {
+    if (!root.dataset.theme) announce();
+  });
+</script>
+
+<style>
+  .site-nav {
+    position: relative;
+    z-index: 50;
+    height: var(--nav-h);
+    background: var(--nav);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s;
+    view-transition-name: site-nav;
+  }
+
+  .site-nav.sticky {
+    position: sticky;
+    top: 0;
+  }
+
+  .site-nav.is-scrolled {
+    border-bottom-color: var(--line);
+  }
+
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .links {
+    display: flex;
+    align-items: center;
+    gap: clamp(2px, 1.5vw, 12px);
+    list-style: none;
+  }
+
+  .links a,
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 999px;
+    color: var(--fg);
+    font-size: 14px;
+    opacity: 0.8;
+    transition:
+      opacity 0.2s,
+      background-color 0.2s;
+  }
+
+  .links a:hover,
+  .links a[aria-current='page'],
+  .theme-toggle:hover {
+    opacity: 1;
+  }
+
+  .links a[aria-current='page'] {
+    font-weight: 600;
+  }
+
+  .theme-toggle {
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  .theme-toggle:hover {
+    background: var(--surface-2);
+  }
+
+  .theme-toggle :global(.i-sun) {
+    display: none;
+  }
+
+  :global(:root[data-theme='dark']) .theme-toggle :global(.i-sun) {
+    display: block;
+  }
+
+  :global(:root[data-theme='dark']) .theme-toggle :global(.i-moon) {
+    display: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .theme-toggle :global(.i-sun) {
+      display: block;
+    }
+
+    :global(:root:not([data-theme='light'])) .theme-toggle :global(.i-moon) {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,734 @@
+---
+import MockFrame from '../MockFrame.astro';
+import Icon from '../Icon.astro';
+
+const nav = [
+  { icon: 'layout', label: '概览' },
+  { icon: 'clock', label: '课表', active: true },
+  { icon: 'send', label: '控制' },
+  { icon: 'shield', label: '人员权限' },
+  { icon: 'server', label: '系统配置' }
+];
+
+const times = ['08:00–08:40', '08:50–09:30', '10:05–10:45', '10:55–11:35', '13:50–14:30', '14:40–15:20'];
+const days = [
+  { label: '周一', classes: ['语文', '数学', '英语', '物理', '化学', '体育'] },
+  { label: '周二', classes: ['数学', '英语', '语文', '化学', '生物', '自习'] },
+  { label: '周三', classes: ['英语', '数学', '物理', '语文', '历史', '音乐'], today: true },
+  { label: '周四', classes: ['物理', '语文', '数学', '英语', '地理', '自习'] },
+  { label: '周五', classes: ['化学', '英语', '数学', '生物', '语文', '班会'] }
+];
+// 当前课程：周三第 2 节
+const current = { day: 2, period: 1 };
+---
+
+<MockFrame width={1000} height={640} label="RemoteCI：WebUI 显示未来七日课表，Wear OS 手表同步显示当前课程">
+  <div class="rc">
+    <div class="browser">
+      <div class="bar">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="url"><Icon name="lock" size={11} /> remoteci / Schedule</span>
+      </div>
+      <div class="app">
+        <aside class="side">
+          <div class="logo">
+            <span class="logo-mark"><Icon name="sync" size={16} /></span>
+            <span><b>RemoteCI</b><small>课堂控制中心</small></span>
+          </div>
+          <ul>
+            {
+              nav.map((item) => (
+                <li class:list={{ active: item.active }}>
+                  <Icon name={item.icon} size={14} />
+                  {item.label}
+                </li>
+              ))
+            }
+          </ul>
+        </aside>
+        <div class="main">
+          <div class="top">
+            <span class="search">搜索页面或功能</span>
+            <span class="avatar">E</span>
+          </div>
+          <div class="head">
+            <div>
+              <small>指定日期课表</small>
+              <h4>未来七日课表</h4>
+            </div>
+            <span class="online"><i></i>插件在线</span>
+          </div>
+          <div class="pull">
+            <div>
+              <b>从插件拉取课表</b>
+              <small>立即连接在线插件，重新生成当前七日课表</small>
+            </div>
+            <span class="pull-btn">立即拉取课表</span>
+          </div>
+          <div class="table">
+            <div class="row th">
+              <span>节次</span>
+              {
+                days.map((d) => (
+                  <span class:list={{ today: d.today }}>
+                    {d.label}
+                    {d.today && <em>今天</em>}
+                  </span>
+                ))
+              }
+            </div>
+            {
+              times.map((time, period) => (
+                <div class="row">
+                  <span class="period">第 {period + 1} 节</span>
+                  {days.map((d, day) => (
+                    <span class:list={['cell', { now: day === current.day && period === current.period }]}>
+                      <b>{d.classes[period]}</b>
+                      <small>{time}</small>
+                    </span>
+                  ))}
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+      <div class="toast">
+        <span class="toast-icon"><Icon name="bell" size={16} /></span>
+        <div>
+          <small>RemoteCI · 现在</small>
+          <b>通知已送达</b>
+          <p>“老师来了” 已推送到 ClassIsland 与 2 块手表</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="watch">
+      <div class="strap"></div>
+      <div class="case">
+        <span class="crown"></span>
+        <div class="screen">
+          <svg class="ring" viewBox="0 0 262 262">
+            <circle cx="131" cy="131" r="123" class="track"></circle>
+            <circle cx="131" cy="131" r="123" class="arc"></circle>
+          </svg>
+          <div class="face face-class">
+            <span class="w-time">09:05</span>
+            <span class="w-period">第 2 节</span>
+            <span class="w-subject">数学</span>
+            <span class="w-pill">距下课 24:16</span>
+            <span class="w-next">下一节：物理</span>
+          </div>
+          <div class="face face-alert">
+            <span class="w-app"><i><Icon name="sync" size={14} /></i>RemoteCI<em>现在</em></span>
+            <span class="w-alert">老师来了</span>
+            <span class="w-from">来自 WebUI</span>
+            <span class="w-clear">清除</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</MockFrame>
+
+<style>
+  .rc {
+    position: relative;
+    width: 1000px;
+    height: 640px;
+    font-family: var(--font-sans);
+    color: #1f2937;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  /* ---- 浏览器 ---- */
+  .browser {
+    position: absolute;
+    left: 0;
+    top: 24px;
+    width: 790px;
+    height: 560px;
+    border-radius: 14px;
+    background: #ffffff;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.08),
+      0 50px 90px -40px rgb(0 0 0 / 0.55),
+      0 12px 30px -12px rgb(0 0 0 / 0.25);
+  }
+
+  .bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 16px;
+    background: #eef0f3;
+    border-bottom: 1px solid #e3e6ea;
+  }
+
+  .dots {
+    display: flex;
+    gap: 7px;
+  }
+
+  .dots i {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #ff5f57;
+  }
+
+  .dots i:nth-child(2) {
+    background: #febc2e;
+  }
+
+  .dots i:nth-child(3) {
+    background: #28c840;
+  }
+
+  .url {
+    position: absolute;
+    left: 50%;
+    translate: -50% 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: 320px;
+    height: 24px;
+    justify-content: center;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #6b7280;
+    font-size: 11px;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 168px 1fr;
+    height: 520px;
+  }
+
+  .side {
+    padding: 18px 12px;
+    background: #f6f8fb;
+    border-right: 1px solid #e8ebf0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 4px 22px;
+  }
+
+  .logo-mark {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: linear-gradient(145deg, #4f9bff, #2563eb);
+    color: #ffffff;
+  }
+
+  .logo b {
+    display: block;
+    font-size: 13.5px;
+  }
+
+  .logo small {
+    display: block;
+    color: #8a94a6;
+    font-size: 10px;
+  }
+
+  .side ul {
+    display: grid;
+    gap: 4px;
+    list-style: none;
+  }
+
+  .side li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 9px;
+    color: #374151;
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+
+  .side li.active {
+    background: #3b82f6;
+    color: #ffffff;
+    box-shadow: 0 8px 16px -8px rgb(59 130 246 / 0.7);
+  }
+
+  .main {
+    padding: 16px 22px;
+  }
+
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .search {
+    width: 240px;
+    height: 30px;
+    padding: 0 14px;
+    border-radius: 15px;
+    background: #f3f5f8;
+    color: #9aa3b2;
+    font-size: 11px;
+    line-height: 30px;
+  }
+
+  .avatar {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #3b82f6;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin: 14px 0 12px;
+  }
+
+  .head small {
+    color: #8a94a6;
+    font-size: 10px;
+  }
+
+  .head h4 {
+    margin-top: 2px;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  .online {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    padding: 0 10px;
+    border-radius: 11px;
+    background: #e8f7ee;
+    color: #16a34a;
+    font-size: 10.5px;
+    font-weight: 600;
+  }
+
+  .online i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: rc-blink 2s ease-in-out infinite;
+  }
+
+  .pull {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 16px;
+    margin-bottom: 12px;
+    border: 1px solid #e8ebf0;
+    border-radius: 12px;
+  }
+
+  .pull b {
+    display: block;
+    font-size: 12.5px;
+  }
+
+  .pull small {
+    color: #8a94a6;
+    font-size: 10.5px;
+  }
+
+  .pull-btn {
+    padding: 7px 18px;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+
+  .table {
+    border: 1px solid #e8ebf0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 58px repeat(5, 1fr);
+    height: 44px;
+    border-top: 1px solid #eef0f4;
+  }
+
+  .row > span {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 10px;
+    border-left: 1px solid #eef0f4;
+  }
+
+  .row > span:first-child {
+    border-left: 0;
+  }
+
+  .th {
+    height: 36px;
+    border-top: 0;
+    background: #fafbfc;
+    color: #4b5563;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .th span {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .th em {
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: #3b82f6;
+    color: #ffffff;
+    font-size: 9px;
+    font-style: normal;
+  }
+
+  .period {
+    color: #3b82f6;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .cell b {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .cell small {
+    color: #9aa3b2;
+    font-size: 9.5px;
+  }
+
+  .cell.now {
+    position: relative;
+    background: #eff6ff;
+  }
+
+  .cell.now::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1.5px solid #3b82f6;
+    border-radius: 8px;
+    animation: rc-pulse 2.4s ease-in-out infinite;
+  }
+
+  .cell.now b {
+    color: #1d4ed8;
+  }
+
+  /* ---- 通知横幅 ---- */
+  .toast {
+    position: absolute;
+    top: 58px;
+    right: 18px;
+    display: flex;
+    gap: 12px;
+    width: 300px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.94);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.06),
+      0 18px 40px -12px rgb(0 0 0 / 0.3);
+    opacity: 0;
+    translate: 0 -16px;
+    scale: 0.96;
+    transition:
+      opacity 0.5s var(--ease),
+      translate 0.7s var(--ease),
+      scale 0.7s var(--ease);
+  }
+
+  .toast-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #3b82f6;
+    color: #ffffff;
+  }
+
+  .toast small {
+    color: #8a94a6;
+    font-size: 10px;
+  }
+
+  .toast b {
+    display: block;
+    font-size: 13px;
+  }
+
+  .toast p {
+    color: #4b5563;
+    font-size: 11.5px;
+  }
+
+  /* ---- 手表 ---- */
+  .watch {
+    position: absolute;
+    left: 690px;
+    top: 236px;
+    width: 300px;
+    height: 404px;
+    transition:
+      opacity 0.7s var(--ease),
+      translate 0.9s var(--ease),
+      scale 0.9s var(--ease);
+  }
+
+  .strap {
+    position: absolute;
+    left: 78px;
+    top: -36px;
+    width: 144px;
+    height: 476px;
+    border-radius: 34px;
+    background: linear-gradient(90deg, #17171a, #2a2a2e 50%, #17171a);
+    -webkit-mask-image: linear-gradient(transparent, #000000 14%, #000000 80%, transparent);
+    mask-image: linear-gradient(transparent, #000000 14%, #000000 80%, transparent);
+  }
+
+  .case {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 22%, #57575d, #1c1c1f 58%, #0e0e10);
+    box-shadow:
+      inset 0 0 0 2px rgb(255 255 255 / 0.08),
+      0 40px 70px -24px rgb(0 0 0 / 0.7);
+  }
+
+  .crown {
+    position: absolute;
+    top: 124px;
+    right: -9px;
+    width: 14px;
+    height: 52px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #1d1d20, #45454b);
+  }
+
+  .screen {
+    position: absolute;
+    inset: 19px;
+    border-radius: 50%;
+    background: #000000;
+    overflow: hidden;
+    color: #ffffff;
+  }
+
+  .ring {
+    position: absolute;
+    inset: 0;
+    rotate: -90deg;
+  }
+
+  .ring circle {
+    fill: none;
+    stroke-width: 5;
+    stroke-linecap: round;
+  }
+
+  .track {
+    stroke: rgb(255 255 255 / 0.1);
+  }
+
+  .arc {
+    stroke: #4f9bff;
+    stroke-dasharray: 773;
+    stroke-dashoffset: 300;
+    transition: opacity 0.4s;
+  }
+
+  .face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition:
+      opacity 0.5s var(--ease),
+      scale 0.6s var(--ease);
+  }
+
+  .w-time {
+    color: #cbd5e1;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .w-period {
+    margin-top: 4px;
+    color: #94a3b8;
+    font-size: 13px;
+  }
+
+  .w-subject {
+    font-size: 46px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .w-pill {
+    margin-top: 6px;
+    padding: 7px 18px;
+    border-radius: 20px;
+    background: #d5ecd0;
+    color: #0b1a0a;
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .w-next {
+    margin-top: 6px;
+    color: #94a3b8;
+    font-size: 12px;
+  }
+
+  .face-alert {
+    align-items: flex-start;
+    padding: 0 40px;
+    opacity: 0;
+    scale: 0.94;
+  }
+
+  .w-app {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .w-app i {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #a8c7fa;
+    color: #062e6f;
+  }
+
+  .w-app em {
+    margin-left: auto;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 13px;
+  }
+
+  .w-alert {
+    margin-top: 8px;
+    font-size: 32px;
+    font-weight: 700;
+  }
+
+  .w-from {
+    color: #9ca3af;
+    font-size: 13px;
+  }
+
+  .w-clear {
+    align-self: center;
+    margin-top: 14px;
+    padding: 8px 34px;
+    border-radius: 20px;
+    background: #2f2f33;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* ---- 滚动分段状态 ---- */
+  :global([data-step='0']) .watch {
+    opacity: 0;
+    translate: 90px 0;
+    scale: 0.92;
+  }
+
+  :global([data-step='2']) .toast {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+
+  :global([data-step='2']) .face-class {
+    opacity: 0;
+    scale: 1.06;
+  }
+
+  :global([data-step='2']) .face-alert {
+    opacity: 1;
+    scale: 1;
+  }
+
+  :global([data-step='2']) .arc {
+    opacity: 0;
+  }
+
+  @keyframes rc-pulse {
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  @keyframes rc-blink {
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cell.now::after,
+    .online i {
+      animation: none;
+    }
+  }
+</style>

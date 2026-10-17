@@ -1,0 +1,475 @@
+---
+import MockFrame from '../MockFrame.astro';
+import Icon from '../Icon.astro';
+
+const subjects = [
+  { name: '语文', color: '#ff6b6b', items: ['背诵《赤壁赋》第二段', '练习册 P34–36'] },
+  { name: '数学', color: '#4d9fff', items: ['课本 P72 习题 3、5', '预习：导数的应用'] },
+  { name: '英语', color: '#b78bff', items: ['Unit 4 单词默写', '完形填空一篇'] },
+  { name: '物理', color: '#2fd3c4', items: ['整理电磁感应笔记', '学案第 3 页'] },
+  { name: '化学', color: '#ffb340', items: ['完成实验报告', '方程式配平 10 题'] },
+  { name: '生物', color: '#5fd068', items: ['遗传图解 2 题'] }
+];
+
+const bars = Array.from({ length: 26 }, (_, i) => ({
+  h: 30 + ((i * 37) % 55),
+  d: (i * 97) % 900
+}));
+---
+
+<MockFrame width={1000} height={640} label="Pancake：教室大屏上的时钟、天气、噪音检测和各科作业磁贴">
+  <div class="pk">
+    <div class="tv">
+      <div class="board">
+        <div class="file">
+          <Icon name="layers" size={13} />
+          今日作业
+          <em>6 科</em>
+        </div>
+
+        <section class="clock">
+          <div class="time">
+            <span data-pk="hm">09:05</span><small data-pk="s">44</small>
+          </div>
+          <p class="date" data-pk="date">10 月 17 日 星期五</p>
+          <div class="weather">
+            <Icon name="cloud" size={26} />
+            <b>18°</b>
+            <span>多云 · 湿度 62%</span>
+          </div>
+          <div class="noise">
+            <div class="noise-head">
+              <span>教室噪音</span>
+              <em>安静</em>
+            </div>
+            <b>38 <small>dB</small></b>
+            <div class="meter">
+              {bars.map((bar) => <i style={`--h:${bar.h}%;--d:${bar.d}ms`} />)}
+            </div>
+          </div>
+        </section>
+
+        <span class="divider"><i></i></span>
+
+        <section class="tiles">
+          {
+            subjects.map((s, i) => (
+              <article class="tile" style={`--c:${s.color};--i:${i}`}>
+                <header>
+                  <i />
+                  <b>{s.name}</b>
+                  <small>{s.items.length} 项</small>
+                </header>
+                <ol>
+                  {s.items.map((item) => (
+                    <li>{item}</li>
+                  ))}
+                </ol>
+              </article>
+            ))
+          }
+          <svg class="ink" viewBox="0 0 566 434" fill="none">
+            <path
+              pathLength="100"
+              d="M214 62c-6-16 50-24 102-24 40 0 62 8 58 20-4 13-48 19-94 18-42-1-72-8-66-21 3-7 20-11 44-13"
+            ></path>
+            <path pathLength="100" d="M30 320c22-5 46 3 68-1s34-5 50 0"></path>
+          </svg>
+        </section>
+
+        <div class="toolbar">
+          <span class="tb pen"><Icon name="pen" size={18} /></span>
+          <span class="tb"><Icon name="layout" size={18} /></span>
+          <span class="tb"><Icon name="image" size={18} /></span>
+          <span class="tb"><Icon name="palette" size={18} /></span>
+        </div>
+      </div>
+    </div>
+    <div class="neck"></div>
+    <div class="base"></div>
+  </div>
+</MockFrame>
+
+<script>
+  const hm = document.querySelectorAll<HTMLElement>('[data-pk="hm"]');
+  const sec = document.querySelectorAll<HTMLElement>('[data-pk="s"]');
+  const date = document.querySelectorAll<HTMLElement>('[data-pk="date"]');
+
+  if (hm.length) {
+    const week = ['日', '一', '二', '三', '四', '五', '六'];
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const tick = () => {
+      const now = new Date();
+      const hmText = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      const dateText = `${now.getMonth() + 1} 月 ${now.getDate()} 日 星期${week[now.getDay()]}`;
+      hm.forEach((el) => (el.textContent = hmText));
+      sec.forEach((el) => (el.textContent = pad(now.getSeconds())));
+      date.forEach((el) => (el.textContent = dateText));
+      setTimeout(tick, 1000 - now.getMilliseconds());
+    };
+    tick();
+  }
+</script>
+
+<style>
+  .pk {
+    position: relative;
+    width: 1000px;
+    height: 640px;
+    font-family: var(--font-sans);
+    color: #e7e9ee;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .tv {
+    position: absolute;
+    inset: 0 0 60px;
+    padding: 10px;
+    border-radius: 20px;
+    background: #050506;
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.08),
+      0 50px 90px -40px rgb(0 0 0 / 0.6),
+      0 12px 30px -12px rgb(0 0 0 / 0.3);
+  }
+
+  .neck {
+    position: absolute;
+    left: 470px;
+    top: 580px;
+    width: 60px;
+    height: 46px;
+    background: linear-gradient(90deg, #8d9196, #d9dce0 50%, #8d9196);
+  }
+
+  .base {
+    position: absolute;
+    left: 370px;
+    top: 624px;
+    width: 260px;
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(#e6e8eb, #9a9ea3);
+    box-shadow: 0 10px 20px -8px rgb(0 0 0 / 0.4);
+  }
+
+  .board {
+    position: relative;
+    height: 100%;
+    border-radius: 11px;
+    overflow: hidden;
+    background:
+      radial-gradient(90% 80% at 0% 0%, rgb(255 159 10 / 0.08), transparent 60%),
+      radial-gradient(120% 90% at 100% 100%, #141821, #0c0e12 70%);
+  }
+
+  .file {
+    position: absolute;
+    top: 16px;
+    left: 22px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #9aa1ad;
+    font-size: 12px;
+  }
+
+  .file em {
+    padding: 1px 7px;
+    border-radius: 6px;
+    background: rgb(255 255 255 / 0.08);
+    font-style: normal;
+    font-size: 10.5px;
+  }
+
+  /* ---- 时钟区 ---- */
+  .clock {
+    position: absolute;
+    left: 30px;
+    top: 52px;
+    bottom: 22px;
+    width: 318px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .time {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .time span {
+    font-size: 108px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -3px;
+    color: #f6f7f9;
+  }
+
+  .time small {
+    color: #6b7280;
+    font-size: 30px;
+    font-weight: 500;
+  }
+
+  .date {
+    margin-top: 12px;
+    color: #aeb4be;
+    font-size: 19px;
+  }
+
+  .weather {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 26px;
+    color: #cfd4dc;
+  }
+
+  .weather b {
+    font-size: 26px;
+    font-weight: 600;
+  }
+
+  .weather span {
+    color: #8b929e;
+  }
+
+  .noise {
+    margin-top: 22px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgb(255 255 255 / 0.04);
+    border: 1px solid rgb(255 255 255 / 0.06);
+  }
+
+  .noise-head {
+    display: flex;
+    justify-content: space-between;
+    color: #8b929e;
+    font-size: 12px;
+  }
+
+  .noise-head em {
+    padding: 0 8px;
+    border-radius: 6px;
+    background: rgb(95 208 104 / 0.16);
+    color: #7ee08a;
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  .noise b {
+    display: block;
+    margin: 2px 0 10px;
+    font-size: 24px;
+    font-weight: 600;
+  }
+
+  .noise b small {
+    color: #8b929e;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .meter {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 34px;
+  }
+
+  .meter i {
+    flex: 1;
+    height: var(--h);
+    border-radius: 2px;
+    background: linear-gradient(to top, #5fd068, #c8e86b 80%, #ffb340);
+    transform-origin: bottom;
+    animation: pk-level 1.6s ease-in-out infinite alternate;
+    animation-delay: calc(var(--d) * -1);
+  }
+
+  .divider {
+    position: absolute;
+    left: 370px;
+    top: 52px;
+    bottom: 22px;
+    width: 1px;
+    background: rgb(255 255 255 / 0.07);
+  }
+
+  .divider i {
+    position: absolute;
+    top: 50%;
+    left: -3px;
+    width: 7px;
+    height: 44px;
+    translate: 0 -50%;
+    border-radius: 4px;
+    background: rgb(255 255 255 / 0.18);
+  }
+
+  /* ---- 作业磁贴 ---- */
+  .tiles {
+    position: absolute;
+    left: 392px;
+    right: 22px;
+    top: 52px;
+    bottom: 74px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .tile {
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--c) 9%, #171a21), #15181e 40%);
+    border: 1px solid rgb(255 255 255 / 0.06);
+    transition:
+      opacity 0.6s var(--ease),
+      translate 0.8s var(--ease),
+      scale 0.8s var(--ease);
+    transition-delay: calc(var(--i) * 70ms);
+  }
+
+  .tile header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .tile header i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 12px var(--c);
+  }
+
+  .tile header b {
+    color: var(--c);
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .tile header small {
+    margin-left: auto;
+    color: #6b7280;
+    font-size: 11px;
+  }
+
+  .tile ol {
+    display: grid;
+    gap: 6px;
+    padding-left: 18px;
+    color: #d3d7de;
+    font-size: 13.5px;
+  }
+
+  .tile li::marker {
+    color: #6b7280;
+  }
+
+  .ink {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .ink path {
+    stroke: #ff5f57;
+    stroke-width: 3.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1.2s var(--ease-in-out);
+  }
+
+  .ink path + path {
+    transition-delay: 0.5s;
+  }
+
+  .toolbar {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    translate: -50% 0;
+    display: flex;
+    gap: 4px;
+    padding: 6px;
+    border-radius: 16px;
+    background: rgb(28 31 38 / 0.86);
+    border: 1px solid rgb(255 255 255 / 0.08);
+    box-shadow: 0 16px 30px -12px rgb(0 0 0 / 0.6);
+  }
+
+  .tb {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    color: #cfd3da;
+    transition:
+      background-color 0.4s,
+      color 0.4s;
+  }
+
+  .tb.pen {
+    background: #ff9f0a;
+    color: #1d1300;
+  }
+
+  /* ---- 滚动分段状态 ---- */
+  :global([data-step='0']) .tile {
+    opacity: 0.3;
+    translate: 0 14px;
+    scale: 0.97;
+    transition-delay: 0s;
+  }
+
+  .tile ol {
+    transition: opacity 0.6s var(--ease);
+    transition-delay: calc(var(--i) * 70ms + 150ms);
+  }
+
+  :global([data-step='0']) .tile ol {
+    opacity: 0;
+    transition-delay: 0s;
+  }
+
+  :global([data-step='0']) .ink path,
+  :global([data-step='1']) .ink path {
+    stroke-dashoffset: 100;
+    transition-delay: 0s;
+  }
+
+  :global([data-step='0']) .tb.pen,
+  :global([data-step='1']) .tb.pen {
+    background: transparent;
+    color: #cfd3da;
+  }
+
+  @keyframes pk-level {
+    from {
+      scale: 1 0.35;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .meter i {
+      animation: none;
+    }
+  }
+</style>

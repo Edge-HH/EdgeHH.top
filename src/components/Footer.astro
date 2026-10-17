@@ -1,0 +1,122 @@
+---
+import BrandMark from './BrandMark.astro';
+import { getProjects } from '../lib/content';
+import { site } from '../site.config';
+
+const projects = await getProjects();
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="top">
+      <div class="about">
+        <a class="brand" href="/">
+          <BrandMark size={22} />
+          <span>{site.name}</span>
+        </a>
+        <p>{site.tagline}。</p>
+      </div>
+      <nav class="cols" aria-label="页脚导航">
+        <div>
+          <h2>项目</h2>
+          <ul>
+            {
+              projects.map((p) => (
+                <li>
+                  <a href={`/projects/${p.id}/`}>{p.data.name}</a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+        <div>
+          <h2>文章</h2>
+          <ul>
+            <li><a href="/posts/">全部文章</a></li>
+            <li><a href="/rss.xml">RSS 订阅</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>链接</h2>
+          <ul>
+            <li><a href={site.github} target="_blank" rel="noopener">GitHub</a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+    <div class="bottom">
+      <p>© {year} {site.name}</p>
+      {
+        site.icp && (
+          <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">
+            {site.icp}
+          </a>
+        )
+      }
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    padding: 56px 0 40px;
+    background: var(--bg-2);
+    border-top: 1px solid var(--line);
+    color: var(--fg-2);
+    font-size: 13px;
+  }
+
+  .top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    color: var(--fg);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .cols {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(40px, 8vw, 96px);
+  }
+
+  h2 {
+    margin-bottom: 12px;
+    color: var(--fg);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  ul {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+  }
+
+  a:hover {
+    color: var(--fg);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 20px;
+    color: var(--fg-3);
+  }
+</style>

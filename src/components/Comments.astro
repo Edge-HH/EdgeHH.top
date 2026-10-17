@@ -1,0 +1,127 @@
+---
+import { giscus } from '../site.config';
+
+const ready = Boolean(giscus.repoId && giscus.categoryId);
+const showSetupHint = !ready && import.meta.env.DEV;
+---
+
+{
+  ready && (
+    <section class="comments" aria-labelledby="comments-title">
+      <h2 id="comments-title">评论</h2>
+      <p class="note">评论区基于 GitHub Discussions，登录 GitHub 账号后即可留言。</p>
+      <div class="host" data-giscus-host data-config={JSON.stringify(giscus)}>
+        <p class="loading">评论加载中…</p>
+      </div>
+    </section>
+  )
+}
+
+{
+  showSetupHint && (
+    <section class="comments setup">
+      <h2>评论区尚未启用</h2>
+      <p class="note">
+        在 <code>src/site.config.ts</code> 中填写 giscus 的 <code>categoryId</code> 后，这里会显示 GitHub Discussions
+        评论。此提示只在本地开发时出现。
+      </p>
+    </section>
+  )
+}
+
+<script>
+  const host = document.querySelector<HTMLElement>('[data-giscus-host]');
+
+  if (host) {
+    const config = JSON.parse(host.dataset.config ?? '{}');
+    const root = document.documentElement;
+    const theme = () => {
+      const dark = root.dataset.theme
+        ? root.dataset.theme === 'dark'
+        : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return dark ? 'transparent_dark' : 'light';
+    };
+
+    const load = () => {
+      const script = document.createElement('script');
+      const attrs: Record<string, string> = {
+        src: 'https://giscus.app/client.js',
+        'data-repo': config.repo,
+        'data-repo-id': config.repoId,
+        'data-category': config.category,
+        'data-category-id': config.categoryId,
+        'data-mapping': config.mapping,
+        'data-strict': config.strict,
+        'data-reactions-enabled': config.reactionsEnabled,
+        'data-emit-metadata': config.emitMetadata,
+        'data-input-position': config.inputPosition,
+        'data-theme': theme(),
+        'data-lang': config.lang,
+        'data-loading': 'lazy',
+        crossorigin: 'anonymous'
+      };
+      for (const [key, value] of Object.entries(attrs)) script.setAttribute(key, value);
+      script.async = true;
+      host.querySelector('.loading')?.remove();
+      host.appendChild(script);
+    };
+
+    // 快滚动到评论区时再加载 giscus
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        load();
+      },
+      { rootMargin: '600px 0px' }
+    );
+    io.observe(host);
+
+    window.addEventListener('themechange', () => {
+      const frame = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+      frame?.contentWindow?.postMessage({ giscus: { setConfig: { theme: theme() } } }, 'https://giscus.app');
+    });
+  }
+</script>
+
+<style>
+  .comments {
+    margin-top: 72px;
+    padding-top: 40px;
+    border-top: 1px solid var(--line);
+  }
+
+  h2 {
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .note {
+    margin: 6px 0 24px;
+    color: var(--fg-2);
+    font-size: 15px;
+  }
+
+  .loading {
+    color: var(--fg-3);
+    font-size: 15px;
+  }
+
+  .setup {
+    padding: 24px;
+    border: 1px dashed var(--line-2);
+    border-radius: var(--r-md);
+  }
+
+  .setup .note {
+    margin-bottom: 0;
+  }
+
+  code {
+    padding: 0.1em 0.35em;
+    border-radius: 5px;
+    background: var(--surface-2);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+</style>

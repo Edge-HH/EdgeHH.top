@@ -1,0 +1,104 @@
+---
+import { getEntry } from 'astro:content';
+import { formatDate, isoDate, type Post } from '../lib/content';
+
+interface Props {
+  post: Post;
+  delay?: number;
+}
+
+const { post, delay = 0 } = Astro.props;
+const { title, description, date, tags } = post.data;
+const project = post.data.project ? await getEntry(post.data.project) : undefined;
+---
+
+<div class="post-card-wrap" data-reveal style={`--d:${delay}`}>
+<a class="post-card" href={`/posts/${post.id}/`} style={project ? `--accent:${project.data.accent}` : undefined}>
+  <span class="meta">
+    <time datetime={isoDate(date)}>{formatDate(date)}</time>
+    {project && <span class="project">{project.data.name}</span>}
+  </span>
+  <h3>{title}</h3>
+  {description && <p>{description}</p>}
+  {
+    tags.length > 0 && (
+      <span class="tags">
+        {tags.map((tag) => (
+          <span class="chip">{tag}</span>
+        ))}
+      </span>
+    )
+  }
+</a>
+</div>
+
+<style>
+  .post-card-wrap {
+    display: flex;
+  }
+
+  .post-card {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 28px;
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    transition:
+      translate 0.5s var(--ease),
+      box-shadow 0.5s var(--ease);
+  }
+
+  .post-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: var(--accent, var(--line-2));
+    opacity: 0.85;
+  }
+
+  .post-card:hover {
+    translate: 0 -4px;
+    box-shadow: var(--shadow-2);
+  }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--fg-2);
+    font-size: 14px;
+  }
+
+  .project {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  h3 {
+    font-size: 22px;
+    line-height: 1.3;
+  }
+
+  p {
+    color: var(--fg-2);
+    font-size: 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: auto;
+    padding-top: 6px;
+  }
+</style>

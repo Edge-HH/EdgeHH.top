@@ -1,0 +1,23 @@
+---
+interface Props {
+  size?: number;
+}
+
+const { size = 24 } = Astro.props;
+---
+
+<svg class="brand-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+  <rect width="32" height="32" rx="8" fill="#0b0b0c"></rect>
+  <rect x="8" y="8" width="3.2" height="16" rx="1.6" fill="#f5f5f7"></rect>
+  <rect x="8" y="8" width="16" height="3.2" rx="1.6" fill="#0a84ff"></rect>
+  <rect x="8" y="14.4" width="11.5" height="3.2" rx="1.6" fill="#ff9f0a"></rect>
+  <rect x="8" y="20.8" width="16" height="3.2" rx="1.6" fill="#13c2a3"></rect>
+</svg>
+
+<style>
+  .brand-mark {
+    flex: none;
+    border-radius: 25%;
+    box-shadow: 0 0 0 1px var(--line);
+  }
+</style>

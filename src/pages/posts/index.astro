@@ -1,0 +1,160 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostRow from '../../components/PostRow.astro';
+import { getPosts } from '../../lib/content';
+
+const posts = await getPosts();
+const tags = [...new Set(posts.flatMap((p) => p.data.tags))];
+
+const years = new Map<number, typeof posts>();
+for (const post of posts) {
+  const year = post.data.date.getUTCFullYear();
+  years.set(year, [...(years.get(year) ?? []), post]);
+}
+---
+
+<BaseLayout title="文章" description="EdgeHH 的更新日志、开发笔记与想法。">
+  <section class="page-head container-narrow">
+    <p class="eyebrow" data-reveal>Articles</p>
+    <h1 data-reveal style="--d:80">文章</h1>
+    <p class="lead" data-reveal style="--d:160">更新日志、开发笔记，以及一些想法。</p>
+
+    {
+      tags.length > 1 && (
+        <div class="filters" role="group" aria-label="按标签筛选" data-reveal style="--d:240">
+          <button type="button" aria-pressed="true" data-tag="">
+            全部
+          </button>
+          {tags.map((tag) => (
+            <button type="button" aria-pressed="false" data-tag={tag}>
+              {tag}
+            </button>
+          ))}
+        </div>
+      )
+    }
+  </section>
+
+  <section class="list container-narrow">
+    {
+      posts.length === 0 ? (
+        <p class="empty">还没有文章。</p>
+      ) : (
+        [...years].map(([year, items]) => (
+          <div class="year-group" data-reveal>
+            <h2>{year}</h2>
+            <ul>
+              {items.map((post) => (
+                <PostRow post={post} />
+              ))}
+            </ul>
+          </div>
+        ))
+      )
+    }
+  </section>
+</BaseLayout>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-tag]');
+
+  const apply = (tag: string) => {
+    buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tag === tag)));
+    document.querySelectorAll<HTMLElement>('.year-group').forEach((group) => {
+      let visible = 0;
+      group.querySelectorAll<HTMLElement>('[data-tags]').forEach((row) => {
+        const show = !tag || (row.dataset.tags ?? '').split('|').includes(tag);
+        row.hidden = !show;
+        if (show) visible++;
+      });
+      group.hidden = visible === 0;
+    });
+    const url = new URL(location.href);
+    if (tag) url.searchParams.set('tag', tag);
+    else url.searchParams.delete('tag');
+    history.replaceState(null, '', url);
+  };
+
+  buttons.forEach((b) => b.addEventListener('click', () => apply(b.dataset.tag ?? '')));
+
+  const initial = new URL(location.href).searchParams.get('tag');
+  if (initial && [...buttons].some((b) => b.dataset.tag === initial)) apply(initial);
+</script>
+
+<style>
+  .page-head {
+    padding-top: clamp(64px, 10vw, 128px);
+    padding-bottom: 32px;
+  }
+
+  h1 {
+    margin-top: 10px;
+    font-size: clamp(48px, 8vw, 88px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .lead {
+    margin-top: 14px;
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 36px;
+  }
+
+  .filters button {
+    height: 34px;
+    padding: 0 16px;
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    background: transparent;
+    font-size: 14px;
+    cursor: pointer;
+    transition:
+      background-color 0.25s,
+      color 0.25s,
+      border-color 0.25s;
+  }
+
+  .filters button:hover {
+    background: var(--surface-2);
+  }
+
+  .filters button[aria-pressed='true'] {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
+  }
+
+  .list {
+    padding-bottom: clamp(96px, 12vw, 160px);
+  }
+
+  .year-group {
+    margin-top: 48px;
+  }
+
+  .year-group[hidden] {
+    display: none;
+  }
+
+  .year-group h2 {
+    margin-bottom: 8px;
+    color: var(--fg-3);
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .year-group ul {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .empty {
+    padding: 48px 0;
+    color: var(--fg-2);
+  }
+</style>

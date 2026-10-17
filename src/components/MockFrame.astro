@@ -1,0 +1,32 @@
+---
+/**
+ * 样机外框：内部按 width × height 的设计尺寸用像素绘制，再整体缩放到容器宽度。
+ * 这样小屏上文字不会受浏览器最小字号限制而撑破布局。
+ */
+interface Props {
+  width: number;
+  height: number;
+  label: string;
+  class?: string;
+}
+
+const { width, height, label, class: className } = Astro.props;
+---
+
+<div
+  class:list={['mock', className]}
+  data-fit={width}
+  style={`aspect-ratio:${width}/${height}`}
+  role="img"
+  aria-label={label}
+>
+  <div class="mock-canvas" style={`width:${width}px;height:${height}px`} aria-hidden="true">
+    <slot />
+  </div>
+</div>
+<script is:inline>
+  {
+    const m = document.currentScript.previousElementSibling;
+    m.style.setProperty('--k', String(m.clientWidth / Number(m.dataset.fit)));
+  }
+</script>

@@ -1,0 +1,39 @@
+---
+import RemoteCIMockup from './mockups/RemoteCIMockup.astro';
+import PancakeMockup from './mockups/PancakeMockup.astro';
+import ClipPortMockup from './mockups/ClipPortMockup.astro';
+import ProjectIcon from './ProjectIcon.astro';
+import type { Project } from '../lib/content';
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+
+// 新项目没有专属样机时，显示大号图标
+const mockups: Record<string, typeof RemoteCIMockup> = {
+  remoteci: RemoteCIMockup,
+  pancake: PancakeMockup,
+  clipport: ClipPortMockup
+};
+const Mockup = mockups[project.id];
+---
+
+{
+  Mockup ? (
+    <Mockup />
+  ) : (
+    <div class="fallback">
+      <ProjectIcon project={project} size={160} />
+    </div>
+  )
+}
+
+<style>
+  .fallback {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1000 / 640;
+  }
+</style>
