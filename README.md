@@ -82,3 +82,5 @@ comments: true     # 可选，false 关闭本文评论
 ## 部署
 
 `esa.jsonc` 已配置为阿里云 ESA Pages：执行 `npm run build`，发布 `dist/` 目录，404 使用 `dist/404.html`。
+
+推送到 `main`、向 `main` 打开 Pull Request，或在 Actions 里手动运行时，`.github/workflows/build.yml` 会用 Node.js 22 执行 `npm ci` 和 `npm run build`，并把生成的 `dist/` 作为 artifact 上传。
